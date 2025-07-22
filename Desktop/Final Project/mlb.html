@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Live MLB Scores</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f4f4f4;
+    }
+    h1 {
+      color: #2e86de;
+    }
+    .game {
+      background: white;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .team {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .team img {
+      width: 40px;
+      height: 40px;
+    }
+    .status {
+      margin-left: auto;
+      font-size: 0.9em;
+      color: #666;
+    }
+    .last-updated {
+      font-size: 0.8em;
+      color: #999;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Live MLB Scores</h1>
+  <div id="scores">Loading...</div>
+  <div class="last-updated" id="updated"></div>
+
+  <script>
+    async function fetchMLBScores() {
+      const response = await fetch('https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard');
+      const data = await response.json();
+      const games = data.events;
+      const container = document.getElementById('scores');
+      const updatedTime = document.getElementById('updated');
+
+      container.innerHTML = '';
+
+      if (!games.length) {
+        container.innerHTML = 'No games today.';
+        return;
+      }
+
+      games.forEach(game => {
+        const teams = game.competitions[0].competitors;
+        const home = teams.find(t => t.homeAway === 'home');
+        const away = teams.find(t => t.homeAway === 'away');
+        const status = game.competitions[0].status.type.description;
+
+        const homeLogo = home.team.logo;
+        const awayLogo = away.team.logo;
+
+        const div = document.createElement('div');
+        div.className = 'game';
+
+        div.innerHTML = `
+          <div class="team">
+            <img src="${awayLogo}" alt="${away.team.displayName} logo">
+            <span>${away.team.displayName} (${away.score})</span>
+          </div>
+          <div class="team">
+            <img src="${homeLogo}" alt="${home.team.displayName} logo">
+            <span>${home.team.displayName} (${home.score})</span>
+          </div>
+          <div class="status">${status}</div>
+        `;
+
+        container.appendChild(div);
+      });
+
+      const now = new Date();
+      updatedTime.textContent = `Last updated: ${now.toLocaleTimeString()}`;
+    }
+
+    // Initial fetch
+    fetchMLBScores();
+
+    // Auto-refresh every 60 seconds (60000 ms)
+    setInterval(fetchMLBScores, 60000);
+  </script>
+</body>
+</html>
